@@ -1,22 +1,18 @@
 const express = require('express');
 const { PeerServer } = require('peer');
-
 const app = express();
-const PORT = process.env.PORT || 443; // Railway free plan assigns dynamic port
+const port = process.env.PORT || 9000;
 
-// Test endpoint
 app.get('/', (req, res) => {
-  res.send('🚀 FlashShare Signaling Server is Running...');
+  res.send('FlashShare Signaling Server is Running... 🚀');
 });
 
-// Start HTTP server
-const server = app.listen(PORT, () => {
-  console.log(`✨ FlashShare Server running on port ${PORT}`);
+const server = app.listen(port, () => {
+  console.log(`✨ FlashShare Server running on port ${port}`);
 });
 
-// PeerJS Signaling Server
 const peerServer = PeerServer({
-  port: PORT,          // Free plan compatible
+  port: 9000,
   path: '/flashshare',
   allow_discovery: true
 });
@@ -29,4 +25,5 @@ peerServer.on('disconnect', (client) => {
   console.log(`Client Disconnected: ${client.getId()}`);
 });
 
-console.log('📡 P2P Signaling active on path /flashshare');
+console.log('📡 P2P Signaling active on port 9001');
+

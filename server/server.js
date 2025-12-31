@@ -1,9 +1,9 @@
 const express = require('express');
 const { PeerServer } = require('peer');
 const app = express();
-const port = process.env.PORT || 9001;
+const port = process.env.PORT || 443;
 
-app.get('/h', (req, res) => {
+app.get('/', (req, res) => {
   res.send('FlashShare Signaling Server is Running... 🚀');
 });
 

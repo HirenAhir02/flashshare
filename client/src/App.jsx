@@ -135,7 +135,7 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
 // });
 const p = new window.Peer(null, {
   host: 'flashshare-production.up.railway.app',
-  port: 9000,            // HTTPS default port
+  port: 443,            // HTTPS default port
   path: '/flashshare',
   secure: true          // must be true for HTTPS
 });

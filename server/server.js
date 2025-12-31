@@ -1,28 +1,53 @@
+// const express = require('express');
+// const { PeerServer } = require('peer');
+// const app = express();
+// const port = process.env.PORT || 9000;
+
+// app.get('/', (req, res) => {
+//   res.send('FlashShare Signaling Server is Running... 🚀');
+// });
+
+// const server = app.listen(port, () => {
+//   console.log(`✨ FlashShare Server running on port ${port}`);
+// });
+
+// const peerServer = PeerServer({
+//   port: 9000,
+//   path: '/flashshare',
+//   allow_discovery: true
+// });
+
+// peerServer.on('connection', (client) => {
+//   console.log(`Client Connected: ${client.getId()}`);
+// });
+
+// peerServer.on('disconnect', (client) => {
+//   console.log(`Client Disconnected: ${client.getId()}`);
+// });
+
+// console.log('📡 P2P Signaling active on port 9001');
+
 const express = require('express');
 const { PeerServer } = require('peer');
 const app = express();
-const port = process.env.PORT || 9000;
+
+// Use environment PORT for Railway free hosting
+const PORT = process.env.PORT || 9000;
 
 app.get('/', (req, res) => {
-  res.send('FlashShare Signaling Server is Running... 🚀');
+  res.send('FlashShare Signaling Server Running 🚀');
 });
 
-const server = app.listen(port, () => {
-  console.log(`✨ FlashShare Server running on port ${port}`);
+const server = app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
+// PeerServer attached to same server
 const peerServer = PeerServer({
-  port: 9000,
+  port: PORT,   // use same port as Express
   path: '/flashshare',
   allow_discovery: true
 });
 
-peerServer.on('connection', (client) => {
-  console.log(`Client Connected: ${client.getId()}`);
-});
-
-peerServer.on('disconnect', (client) => {
-  console.log(`Client Disconnected: ${client.getId()}`);
-});
-
-console.log('📡 P2P Signaling active on port 9001');
+peerServer.on('connection', client => console.log('Client connected:', client.getId()));
+peerServer.on('disconnect', client => console.log('Client disconnected:', client.getId()));

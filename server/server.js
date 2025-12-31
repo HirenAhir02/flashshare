@@ -12,7 +12,8 @@ const server = app.listen(port, () => {
 });
 
 const peerServer = PeerServer({
-  // port: 9001,
+  server: server,       // Use existing Express server
+  path: '/flashshare',
   path: '/flashshare',
   allow_discovery: true
 });

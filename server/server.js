@@ -2,7 +2,7 @@ const express = require('express');
 const { PeerServer } = require('peer');
 
 const app = express();
-const PORT = process.env.PORT || 9000; // Railway free plan assigns dynamic port
+const PORT = process.env.PORT || 443; // Railway free plan assigns dynamic port
 
 // Test endpoint
 app.get('/', (req, res) => {

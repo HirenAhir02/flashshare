@@ -12,7 +12,7 @@ const server = app.listen(port, () => {
 });
 
 const peerServer = PeerServer({
-  port: 9000,
+  // port: 9001,
   path: '/flashshare',
   allow_discovery: true
 });

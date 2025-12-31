@@ -8,7 +8,7 @@ app.get('/', (req, res) => {
 });
 
 const server = app.listen(PORT, () => {
-  console.log(`✨ FlashShare Server running on port ${port}`);
+  console.log(`✨ FlashShare Server running on port ${PORT}`);
 });
 
 const peerServer = PeerServer({

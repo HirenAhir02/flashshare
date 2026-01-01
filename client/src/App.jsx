@@ -133,10 +133,24 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
 //   path: '/flashshare',
 //   secure: true
 // });
+// const p = new window.Peer(undefined, {
+//   host: 'flashshare-production.up.railway.app',
+//   path: '/flashshare',
+//   secure: true,
+//   config: {
+//     iceServers: [
+//       { urls: 'stun:stun.l.google.com:19302' },
+//       { urls: 'stun:stun1.l.google.com:19302' }
+//     ]
+//   }
+// });
+
 const p = new window.Peer(undefined, {
-  host: 'flashshare-production.up.railway.app',
+  host: 'flashshare-production.up.railway.app', // your Railway URL
   path: '/flashshare',
-  secure: true,
+  secure: true,          // must be true for HTTPS
+  port: 443,             // default HTTPS port
+  debug: 2,              // frontend logs
   config: {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
@@ -144,6 +158,7 @@ const p = new window.Peer(undefined, {
     ]
   }
 });
+
 
 
 

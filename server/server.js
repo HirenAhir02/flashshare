@@ -1,40 +1,32 @@
 const express = require('express');
 const { ExpressPeerServer } = require('peer');
+const http = require('http');
 const cors = require('cors');
 
 const app = express();
 
-// ✅ CORS – allow all (Railway + Vercel safest)
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST']
-}));
+// ✅ Allow all (Vercel safe)
+app.use(cors({ origin: '*' }));
 
-// Health check / test
+// Test route
 app.get('/', (req, res) => {
   res.send('🚀 PeerJS Server Running');
 });
 
-// ⚠️ IMPORTANT: listen FIRST
-const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Server running on port ${PORT}`);
-});
+// 🔥 IMPORTANT: create HTTP server manually
+const server = http.createServer(app);
 
-// ✅ Attach PeerJS AFTER server.listen
+// 🔥 Attach PeerJS BEFORE listen
 const peerServer = ExpressPeerServer(server, {
-  path: '/',        // 🔥 VERY IMPORTANT
-  debug: true
+  debug: true,
+  path: '/'
 });
 
-// ⚠️ mount ONLY /peerjs
+// 🔥 Mount PeerJS
 app.use('/peerjs', peerServer);
 
-// Logs
-peerServer.on('connection', (client) => {
-  console.log('🔌 Client connected:', client.getId());
-});
-
-peerServer.on('disconnect', (client) => {
-  console.log('❌ Client disconnected:', client.getId());
+// Start server
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`✅ PeerJS listening on ${PORT}`);
 });

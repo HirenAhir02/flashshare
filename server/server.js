@@ -19,6 +19,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 // attach PeerJS to SAME server
 const peerServer = ExpressPeerServer(server, {
   path: '/flashshare',
+  secure: true,
   allow_discovery: true,
 });
 

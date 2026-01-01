@@ -133,12 +133,18 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
 //   path: '/flashshare',
 //   secure: true
 // });
-const p = new window.Peer(null, {
+const p = new window.Peer(undefined, {
   host: 'flashshare-production.up.railway.app',
-  port: 443,            // HTTPS default port
   path: '/flashshare',
-  secure: true          // must be true for HTTPS
+  secure: true,
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]
+  }
 });
+
 
 
 

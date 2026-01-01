@@ -145,7 +145,7 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
 //   }
 // });
 
-const peer = new Peer(undefined, {
+const p = new Peer(undefined, {
   host: 'flashshare-production.up.railway.app',
   port: 443,
   path: '/peerjs',   // ✅ MUST MATCH

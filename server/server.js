@@ -1,32 +1,31 @@
 const express = require('express');
 const { ExpressPeerServer } = require('peer');
+
 const app = express();
-const port = 9000;
+const PORT = process.env.PORT || 9000;
 
 app.get('/', (req, res) => {
-  res.send('FlashShare Signaling Server is Running... 🚀');
+  res.send('🚀 FlashShare Signaling Server is Running');
 });
 
-const server = app.listen(port, () => {
-  console.log(`✨ FlashShare Server running on port ${port}`);
+// start express
+const server = app.listen(PORT, () => {
+  console.log(`✨ Server running on port ${PORT}`);
 });
 
-// const peerServer = PeerServer({
-//   port: 9000,
-//   path: '/flashshare',
-//   allow_discovery: true
-// });
+// attach peer server
 const peerServer = ExpressPeerServer(server, {
   allow_discovery: true,
 });
 
+// 🔴 THIS WAS MISSING
+app.use('/flashshare', peerServer);
+
+// logs
 peerServer.on('connection', (client) => {
-  console.log(`Client Connected: ${client.getId()}`);
+  console.log('Client Connected:', client.getId());
 });
 
 peerServer.on('disconnect', (client) => {
-  console.log(`Client Disconnected: ${client.getId()}`);
+  console.log('Client Disconnected:', client.getId());
 });
-
-console.log('📡 P2P Signaling active on port 9001');
-

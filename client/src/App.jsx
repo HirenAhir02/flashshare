@@ -190,38 +190,18 @@ p.on('error', (err) => {
         // Connection established
         console.log("Receiver connected!");
       });
-const readSlice = (o) => {
-  const slice = file.slice(offset, o + CHUNK_SIZE);
-  const reader = new FileReader();
 
-  reader.onload = (event) => {
-    conn.send({ type: 'CHUNK', data: event.target.result });
-  };
+      conn.on('data', (data) => {
+  if (data.type === 'CHUNK') {
+    // handle chunk
+    receivedBytes += data.data.byteLength;
+    setProgress((receivedBytes / metaRef.current.size) * 100);
 
-  reader.readAsArrayBuffer(slice);
-};
-
-// Listen for ACK
-conn.on('data', (data) => {
-  if (data.type === 'ACK_CHUNK') {
-    offset += CHUNK_SIZE;
-    if (offset < file.size) readSlice(offset);
-    else {
-      conn.send({ type: 'EOF' });
-      setStatus('complete');
-    }
+    // send ACK back
+    conn.send({ type: 'ACK_CHUNK' });
   }
 });
 
-// Start first chunk
-readSlice(0);
-
-      // connection.on('data', (data) => {
-      //   // Handle ACK to send next chunk (Backpressure control)
-      //   if (data && data.type === 'ACK_CHUNK') {
-      //     // In a complex app, we use this to trigger next chunk read
-      //   }
-      // });
     });
 
     p.on('error', (err) => {

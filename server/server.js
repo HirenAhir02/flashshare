@@ -11,7 +11,8 @@ const server = app.listen(port, () => {
   console.log(`✨ FlashShare Server running on port ${port}`);
 });
 
-const peerServer = PeerServer(server,{
+const peerServer = PeerServer({
+  port: 9000,
   path: '/flashshare',
   allow_discovery: true
 });

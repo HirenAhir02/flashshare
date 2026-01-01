@@ -1,5 +1,5 @@
 const express = require('express');
-const { PeerServer } = require('peer');
+const { ExpressPeerServer } = require('peer');
 const app = express();
 const port = 9000;
 
@@ -11,10 +11,13 @@ const server = app.listen(port, () => {
   console.log(`✨ FlashShare Server running on port ${port}`);
 });
 
-const peerServer = PeerServer({
-  // port: 9000,
-  path: '/flashshare',
-  allow_discovery: true
+// const peerServer = PeerServer({
+//   port: 9000,
+//   path: '/flashshare',
+//   allow_discovery: true
+// });
+const peerServer = ExpressPeerServer(server, {
+  allow_discovery: true,
 });
 
 peerServer.on('connection', (client) => {

@@ -119,159 +119,122 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
   const [conn, setConn] = useState(null);
   
   // Initialize Peer on mount
-//   useEffect(() => {
-//     if (!isPeerLoaded) return;
+  useEffect(() => {
+    if (!isPeerLoaded) return;
     
-//     // Create Peer (using public PeerJS server for demo)
-//     // In production, use your own host: { host: 'your-node-app.com', port: 443, path: '/myapp' }
-//     // const p = new window.Peer(null, {
-//     //   debug: 2
-//     // });
-// //     const p = new window.Peer(null, {
-// //   host: 'flashshare-production.up.railway.app',
-// //   port: 9001,
-// //   path: '/flashshare',
-// //   secure: true
-// // });
-// // const p = new window.Peer(undefined, {
-// //   host: 'flashshare-production.up.railway.app',
-// //   path: '/flashshare',
-// //   secure: true,
-// //   config: {
-// //     iceServers: [
-// //       { urls: 'stun:stun.l.google.com:19302' },
-// //       { urls: 'stun:stun1.l.google.com:19302' }
-// //     ]
-// //   }
-// // });
-
-// // const p = new Peer(undefined, {
-// //   host: 'flashshare-production.up.railway.app',
-// //   port: 443,
-// //   path: '/peerjs',   // ✅ MUST MATCH
-// //   secure: true,
-// //   debug: 2,
-// //   config: {
-// //     iceServers: [
-// //       { urls: 'stun:stun.l.google.com:19302' },
-// //       { urls: 'stun:stun1.l.google.com:19302' }
-// //     ]
-// //   }
-// // });
-
+    // Create Peer (using public PeerJS server for demo)
+    // In production, use your own host: { host: 'your-node-app.com', port: 443, path: '/myapp' }
+    // const p = new window.Peer(null, {
+    //   debug: 2
+    // });
+//     const p = new window.Peer(null, {
+//   host: 'flashshare-production.up.railway.app',
+//   port: 9001,
+//   path: '/flashshare',
+//   secure: true
+// });
 // const p = new window.Peer(undefined, {
 //   host: 'flashshare-production.up.railway.app',
-//   port: 443,
+//   path: '/flashshare',
 //   secure: true,
-//   path: '/peerjs',
-//   debug: 2
+//   config: {
+//     iceServers: [
+//       { urls: 'stun:stun.l.google.com:19302' },
+//       { urls: 'stun:stun1.l.google.com:19302' }
+//     ]
+//   }
 // });
 
-// p.on('open', (id) => {
-//   console.log('✅ Peer ID:', id);
+// const p = new Peer(undefined, {
+//   host: 'flashshare-production.up.railway.app',
+//   port: 443,
+//   path: '/peerjs',   // ✅ MUST MATCH
+//   secure: true,
+//   debug: 2,
+//   config: {
+//     iceServers: [
+//       { urls: 'stun:stun.l.google.com:19302' },
+//       { urls: 'stun:stun1.l.google.com:19302' }
+//     ]
+//   }
 // });
 
-// p.on('error', (err) => {
-//   console.error('❌ Peer error:', err);
-// });
+const p = new window.Peer(undefined, {
+  host: 'flashshare-production.up.railway.app',
+  port: 443,
+  secure: true,
+  path: '/peerjs',
+  debug: 2
+});
+
+p.on('open', (id) => {
+  console.log('✅ Peer ID:', id);
+});
+
+p.on('error', (err) => {
+  console.error('❌ Peer error:', err);
+});
 
 
 
-//     // p.on('open', (id) => {
-//     //   setPeerId(id);
-//     //   setStatus('ready');
-//     // });
+    // p.on('open', (id) => {
+    //   setPeerId(id);
+    //   setStatus('ready');
+    // });
 
-//     p.on('connection', (connection) => {
-//       setConn(connection);
-//       setStatus('waiting_ack'); // Connected, waiting to start
+    p.on('connection', (connection) => {
+      setConn(connection);
+      setStatus('waiting_ack'); // Connected, waiting to start
       
-//       connection.on('open', () => {
-//         // Connection established
-//         console.log("Receiver connected!");
-//       });
+      connection.on('open', () => {
+        // Connection established
+        console.log("Receiver connected!");
+      });
+const readSlice = (o) => {
+  const slice = file.slice(offset, o + CHUNK_SIZE);
+  const reader = new FileReader();
 
-//       connection.on('data', (data) => {
-//         // Handle ACK to send next chunk (Backpressure control)
-//         if (data && data.type === 'ACK_CHUNK') {
-//           // In a complex app, we use this to trigger next chunk read
-//         }
-//       });
-//     });
+  reader.onload = (event) => {
+    conn.send({ type: 'CHUNK', data: event.target.result });
+  };
 
-//     p.on('error', (err) => {
-//       console.error(err);
-//       setStatus('error');
-//     });
+  reader.readAsArrayBuffer(slice);
+};
 
-//     setPeer(p);
+// Listen for ACK
+conn.on('data', (data) => {
+  if (data.type === 'ACK_CHUNK') {
+    offset += CHUNK_SIZE;
+    if (offset < file.size) readSlice(offset);
+    else {
+      conn.send({ type: 'EOF' });
+      setStatus('complete');
+    }
+  }
+});
 
-//     return () => {
-//       if (p) p.destroy();
-//     };
-//   }, [isPeerLoaded]);
+// Start first chunk
+readSlice(0);
 
-useEffect(() => {
-  if (!isPeerLoaded) return;
-
-  // Initialize PeerJS
-  const p = new window.Peer(undefined, {
-    host: 'flashshare-production.up.railway.app',
-    port: 443,
-    secure: true,
-    path: '/peerjs',
-    debug: 2
-  });
-
-  // Peer opened
-  p.on('open', (id) => {
-    console.log('✅ Peer ID:', id);
-    setPeerId(id);      // Update state with your Peer ID
-    setStatus('ready'); // Ready to connect
-  });
-
-  // Handle connection from receiver
-  p.on('connection', (connection) => {
-    console.log('Receiver connected!');
-    setConn(connection);
-    setStatus('waiting_ack'); // Waiting for receiver ACK
-
-    connection.on('open', () => {
-      console.log('✅ Connection established with receiver');
+      // connection.on('data', (data) => {
+      //   // Handle ACK to send next chunk (Backpressure control)
+      //   if (data && data.type === 'ACK_CHUNK') {
+      //     // In a complex app, we use this to trigger next chunk read
+      //   }
+      // });
     });
 
-    connection.on('data', (data) => {
-      if (data && data.type === 'ACK_CHUNK') {
-        // Trigger next chunk transfer for flow control
-        console.log('Received ACK from receiver');
-      }
-    });
-
-    connection.on('close', () => {
-      console.log('Connection closed by receiver');
-      setStatus('init');
-    });
-
-    connection.on('error', (err) => {
-      console.error('Connection error:', err);
+    p.on('error', (err) => {
+      console.error(err);
       setStatus('error');
     });
-  });
 
-  // Handle PeerJS errors
-  p.on('error', (err) => {
-    console.error('Peer error:', err);
-    setStatus('error');
-  });
+    setPeer(p);
 
-  setPeer(p); // Save peer instance
-
-  // Cleanup on unmount
-  return () => {
-    if (p) p.destroy();
-  };
-}, [isPeerLoaded]);
-
+    return () => {
+      if (p) p.destroy();
+    };
+  }, [isPeerLoaded]);
 
   const handleFileDrop = (e) => {
     e.preventDefault();

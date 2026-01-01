@@ -167,9 +167,9 @@ const p = new window.Peer(undefined, {
   debug: 2
 });
 
-p.on('open', (id) => {
-  console.log('✅ Peer ID:', id);
-});
+// p.on('open', (id) => {
+//   console.log('✅ Peer ID:', id);
+// });
 
 p.on('error', (err) => {
   console.error('❌ Peer error:', err);
@@ -177,10 +177,10 @@ p.on('error', (err) => {
 
 
 
-    // p.on('open', (id) => {
-    //   setPeerId(id);
-    //   setStatus('ready');
-    // });
+    p.on('open', (id) => {
+      setPeerId(id);
+      setStatus('ready');
+    });
 
     p.on('connection', (connection) => {
       setConn(connection);

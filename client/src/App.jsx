@@ -159,7 +159,7 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
 //   }
 // });
 
-const peer = new window.Peer(undefined, {
+const p = new window.Peer(undefined, {
   host: 'flashshare-production.up.railway.app',
   port: 443,
   secure: true,
@@ -167,11 +167,11 @@ const peer = new window.Peer(undefined, {
   debug: 2
 });
 
-peer.on('open', (id) => {
+p.on('open', (id) => {
   console.log('✅ Peer ID:', id);
 });
 
-peer.on('error', (err) => {
+p.on('error', (err) => {
   console.error('❌ Peer error:', err);
 });
 
@@ -181,12 +181,12 @@ peer.on('error', (err) => {
 
 
 
-    peer.on('open', (id) => {
+    p.on('open', (id) => {
       setPeerId(id);
       setStatus('ready');
     });
 
-    peer.on('connection', (connection) => {
+    p.on('connection', (connection) => {
       setConn(connection);
       setStatus('waiting_ack'); // Connected, waiting to start
       
@@ -203,15 +203,15 @@ peer.on('error', (err) => {
       });
     });
 
-    peer.on('error', (err) => {
+    p.on('error', (err) => {
       console.error(err);
       setStatus('error');
     });
 
-    setPeer(peer);
+    setPeer(p);
 
     return () => {
-      if (peer) p.destroy();
+      if (p) p.destroy();
     };
   }, [isPeerLoaded]);
 

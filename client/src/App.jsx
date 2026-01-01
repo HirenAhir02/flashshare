@@ -119,9 +119,11 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
   const [conn, setConn] = useState(null);
   
   // Initialize Peer on mount
- useEffect(() => {
+ // Initialize Peer on mount
+useEffect(() => {
   if (!isPeerLoaded) return;
 
+  // Create Peer for sender
   const p = new window.Peer(undefined, {
     host: 'flashshare-production.up.railway.app',
     port: 443,
@@ -130,18 +132,21 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
     debug: 2
   });
 
+  // Handle Peer open
   p.on('open', (id) => {
+    console.log('✅ Sender Peer ID:', id);
     setPeerId(id);
-    setStatus('ready');
+    setStatus('ready'); // Ready to share ID
   });
 
+  // Handle incoming connection from receiver
   p.on('connection', (connection) => {
-    console.log("Receiver connected!");
+    console.log('Receiver connected!');
     setConn(connection);
-    setStatus('waiting_ack');
+    setStatus('waiting_ack'); // Waiting for ACK / ready to start
 
     let offset = 0;
-    const CHUNK_SIZE = 16 * 1024; // 16 KB
+    const CHUNK_SIZE = 16 * 1024; // 16KB chunks
 
     const sendNextChunk = () => {
       if (!file || !connection.open) return;
@@ -152,10 +157,12 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
       reader.onload = (e) => {
         connection.send({ type: 'CHUNK', data: e.target.result });
         offset += CHUNK_SIZE;
+
         const percent = Math.min(100, (offset / file.size) * 100);
         setProgress(percent);
 
         if (offset < file.size) {
+          // Flow control: wait if buffer is high
           if (connection.dataChannel.bufferedAmount > 10 * 1024 * 1024) {
             setTimeout(sendNextChunk, 100);
           } else {
@@ -170,32 +177,37 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
       reader.readAsArrayBuffer(slice);
     };
 
-    // Start sending after connection is open
+    // Start sending first chunk when connection opens
     connection.on('open', () => {
-      console.log("Connection open, starting transfer...");
-      sendNextChunk(); // Send first chunk immediately
+      console.log('Connection open, starting file transfer...');
+      sendNextChunk();
     });
 
+    // Listen for ACK from receiver to control backpressure
     connection.on('data', (data) => {
       if (data?.type === 'ACK_CHUNK') {
         sendNextChunk();
       }
     });
 
+    // Handle connection errors
     connection.on('error', (err) => {
-      console.error("Conn error:", err);
+      console.error('Connection error:', err);
       setStatus('error');
     });
   });
 
+  // Handle Peer errors
   p.on('error', (err) => {
-    console.error("Peer error:", err);
+    console.error('❌ Peer error:', err);
     setStatus('error');
   });
 
   setPeer(p);
 
-  return () => { if(p) p.destroy(); };
+  return () => {
+    if (p) p.destroy();
+  };
 }, [isPeerLoaded, file]);
 
 
@@ -243,71 +255,71 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
     document.body.removeChild(textArea);
   };
 
-  const startTransfer = async () => {
-    if (!conn || !file) return;
-    setStatus('transferring');
+  // const startTransfer = async () => {
+  //   if (!conn || !file) return;
+  //   setStatus('transferring');
 
-    // 1. Send Metadata
-    conn.send({
-      type: 'METADATA',
-      name: file.name,
-      size: file.size,
-      mime: file.type
-    });
+  //   // 1. Send Metadata
+  //   conn.send({
+  //     type: 'METADATA',
+  //     name: file.name,
+  //     size: file.size,
+  //     mime: file.type
+  //   });
 
-    // 2. Start Chunking
-    const CHUNK_SIZE = 16 * 1024; // 16KB chunks (Safe for PeerJS)
-    let offset = 0;
+  //   // 2. Start Chunking
+  //   const CHUNK_SIZE = 16 * 1024; // 16KB chunks (Safe for PeerJS)
+  //   let offset = 0;
 
-    // Simple loop for demo. For 150GB, we need flow control (wait for ACKs)
-    // to prevent memory overflow. Here we use a bufferedAmount check.
+  //   // Simple loop for demo. For 150GB, we need flow control (wait for ACKs)
+  //   // to prevent memory overflow. Here we use a bufferedAmount check.
     
-    const readSlice = (o) => {
-      const slice = file.slice(offset, o + CHUNK_SIZE);
-      const reader = new FileReader();
+  //   const readSlice = (o) => {
+  //     const slice = file.slice(offset, o + CHUNK_SIZE);
+  //     const reader = new FileReader();
       
-      reader.onload = (event) => {
-        if (!conn.open) return;
+  //     reader.onload = (event) => {
+  //       if (!conn.open) return;
         
-        conn.send({
-          type: 'CHUNK',
-          data: event.target.result // ArrayBuffer
-        });
+  //       conn.send({
+  //         type: 'CHUNK',
+  //         data: event.target.result // ArrayBuffer
+  //       });
 
-        offset += CHUNK_SIZE;
+  //       offset += CHUNK_SIZE;
         
-        // Calculate Progress
-        const percent = Math.min(100, (offset / file.size) * 100);
-        setProgress(percent);
+  //       // Calculate Progress
+  //       const percent = Math.min(100, (offset / file.size) * 100);
+  //       setProgress(percent);
 
-        if (offset < file.size) {
-          // Flow Control: Check buffer
-          if (conn.dataChannel.bufferedAmount > 10 * 1024 * 1024) {
-             // Wait if buffer is full (>10MB)
-             setTimeout(() => readSlice(offset), 100);
-          } else {
-             // Continue fast
-             setTimeout(() => readSlice(offset), 0); // Release main thread
-          }
-        } else {
-          conn.send({ type: 'EOF' }); // End of File
-          setStatus('complete');
-        }
-      };
+  //       if (offset < file.size) {
+  //         // Flow Control: Check buffer
+  //         if (conn.dataChannel.bufferedAmount > 10 * 1024 * 1024) {
+  //            // Wait if buffer is full (>10MB)
+  //            setTimeout(() => readSlice(offset), 100);
+  //         } else {
+  //            // Continue fast
+  //            setTimeout(() => readSlice(offset), 0); // Release main thread
+  //         }
+  //       } else {
+  //         conn.send({ type: 'EOF' }); // End of File
+  //         setStatus('complete');
+  //       }
+  //     };
       
-      reader.readAsArrayBuffer(slice);
-    };
+  //     reader.readAsArrayBuffer(slice);
+  //   };
 
-    readSlice(0);
-  };
+  //   readSlice(0);
+  // };
 
-  // Auto-start transfer when connection opens and file is ready
-  useEffect(() => {
-    if (status === 'waiting_ack' && file && conn) {
-       // Add small delay to ensure connection is stable
-       setTimeout(startTransfer, 500);
-    }
-  }, [status, file, conn]);
+  // // Auto-start transfer when connection opens and file is ready
+  // useEffect(() => {
+  //   if (status === 'waiting_ack' && file && conn) {
+  //      // Add small delay to ensure connection is stable
+  //      setTimeout(startTransfer, 500);
+  //   }
+  // }, [status, file, conn]);
 
 
   return (

@@ -145,19 +145,14 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
 //   }
 // });
 
-const p = new Peer(undefined, {
+const p = new window.Peer(undefined, {
   host: 'flashshare-production.up.railway.app',
   port: 443,
-  path: '/peerjs',   // ✅ MUST MATCH
+  path: '/peerjs',
   secure: true,
-  debug: 2,
-  config: {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' }
-    ]
-  }
+  debug: 2
 });
+
 
 
 

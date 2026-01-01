@@ -3,31 +3,38 @@ const { ExpressPeerServer } = require('peer');
 const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// 🔥 allow everything for PeerJS
-app.use(cors({ origin: '*' }));
+// ✅ CORS – allow all (Railway + Vercel safest)
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST']
+}));
 
+// Health check / test
 app.get('/', (req, res) => {
-  res.send('🚀 FlashShare Signaling Server Running');
+  res.send('🚀 PeerJS Server Running');
 });
 
+// ⚠️ IMPORTANT: listen FIRST
+const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✨ FlashShare Server running on port ${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
 });
 
-// 🔥 IMPORTANT CHANGE HERE
+// ✅ Attach PeerJS AFTER server.listen
 const peerServer = ExpressPeerServer(server, {
-  path: '/peerjs',   // ✅ THIS FIXES 404
-  allow_discovery: true,
-  debug: true,
+  path: '/',        // 🔥 VERY IMPORTANT
+  debug: true
 });
 
+// ⚠️ mount ONLY /peerjs
 app.use('/peerjs', peerServer);
 
+// Logs
 peerServer.on('connection', (client) => {
-  console.log('Client connected:', client.getId());
+  console.log('🔌 Client connected:', client.getId());
 });
+
 peerServer.on('disconnect', (client) => {
-  console.log('Client disconnected:', client.getId());
+  console.log('❌ Client disconnected:', client.getId());
 });

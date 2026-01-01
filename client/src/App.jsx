@@ -191,17 +191,12 @@ p.on('error', (err) => {
         console.log("Receiver connected!");
       });
 
-      conn.on('data', (data) => {
-  if (data.type === 'CHUNK') {
-    // handle chunk
-    receivedBytes += data.data.byteLength;
-    setProgress((receivedBytes / metaRef.current.size) * 100);
-
-    // send ACK back
-    conn.send({ type: 'ACK_CHUNK' });
-  }
-});
-
+      connection.on('data', (data) => {
+        // Handle ACK to send next chunk (Backpressure control)
+        if (data && data.type === 'ACK_CHUNK') {
+          // In a complex app, we use this to trigger next chunk read
+        }
+      });
     });
 
     p.on('error', (err) => {

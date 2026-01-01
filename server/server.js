@@ -17,7 +17,7 @@ const server = app.listen(port, () => {
 //   allow_discovery: true
 // });
 // Peer server
-const peerServer = ExpressPeerServer(server, {
+const peerServer = PeerServer(server, {
   debug: true,
   path: '/',              // 👈 VERY IMPORTANT
   allow_discovery: true,

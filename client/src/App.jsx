@@ -58,7 +58,7 @@ const Navbar = ({ darkMode, toggleTheme, setPage, page }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
-          {/* Logo Section - Ab Mobile me bhi dikhega */}
+          {/* Logo Section - Visible on Mobile */}
           <div 
             className="flex items-center gap-2 cursor-pointer group select-none"
             onClick={handleLogoClick}
@@ -66,13 +66,12 @@ const Navbar = ({ darkMode, toggleTheme, setPage, page }) => {
             <div className="bg-gradient-to-tr from-cyan-400 to-blue-600 p-2 rounded-lg group-hover:rotate-12 transition-transform">
               <Zap size={24} className="text-white" fill="currentColor" />
             </div>
-            {/* 'hidden sm:block' hata diya taki mobile me text dikhe */}
             <span className="font-bold text-xl md:text-2xl tracking-tighter">
               Flash<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">Share</span>
             </span>
           </div>
 
-          {/* Desktop Links (Mobile me HIDDEN rahenge) */}
+          {/* Desktop Links (Hidden on Mobile) */}
           <div className="hidden md:flex items-center gap-6 text-sm font-medium">
               <button onClick={() => handleNavClick('how-it-works')} className="hover:text-cyan-500 transition-colors">How it Works</button>
               <button onClick={() => handleNavClick('security')} className="hover:text-cyan-500 transition-colors">Security</button>
@@ -123,7 +122,6 @@ const Footer = ({ darkMode }) => (
 
 const Hero = ({ setPage, darkMode }) => (
   <div className="relative pt-24 pb-12 lg:pt-48 lg:pb-32 overflow-hidden px-4">
-    {/* Background Glows (Adjusted sizes) */}
     <div className="absolute top-20 left-1/4 w-64 h-64 md:w-96 md:h-96 bg-cyan-500/20 rounded-full blur-3xl mix-blend-screen" />
     <div className="absolute bottom-10 right-1/4 w-64 h-64 md:w-96 md:h-96 bg-blue-600/20 rounded-full blur-3xl mix-blend-screen" />
 
@@ -133,7 +131,6 @@ const Hero = ({ setPage, darkMode }) => (
         V2.0 Now Live
       </div>
       
-      {/* Responsive Text Size */}
       <h1 className={`text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight mb-6 md:mb-8 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
         Share Files at <br className="hidden md:block" />
         <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600">
@@ -226,17 +223,15 @@ const SecuritySection = ({ darkMode }) => (
           </div>
         </div>
         
-        {/* Responsive Animation Circle */}
         <div className="flex-1 flex justify-center mt-8 md:mt-0">
             <div className={`relative w-64 h-64 md:w-80 md:h-80 rounded-full border-4 flex items-center justify-center ${
                 darkMode ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-white'
             }`}>
                  <div className="absolute inset-0 rounded-full border border-cyan-500/30 animate-[spin_10s_linear_infinite]"></div>
-                 <Shield size={80} md-size={120} className="text-cyan-500/20 md:scale-150 scale-100" />
+                 <Shield size={80} className="text-cyan-500/20 md:scale-150 scale-100" />
                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Lock size={48} md-size={64} className="text-cyan-500 md:scale-125 scale-100" />
+                    <Lock size={48} className="text-cyan-500 md:scale-125 scale-100" />
                  </div>
-                 {/* Floating Badges */}
                  <div className="absolute -top-4 right-4 md:right-10 bg-green-500 text-white text-[10px] md:text-xs px-2 md:px-3 py-1 rounded-full shadow-lg">AES-256</div>
                  <div className="absolute bottom-6 -left-2 md:-left-6 bg-blue-500 text-white text-[10px] md:text-xs px-2 md:px-3 py-1 rounded-full shadow-lg">No Logs</div>
             </div>
@@ -258,7 +253,7 @@ const AboutSection = ({ darkMode }) => (
     </section>
 );
 
-// --- FUNCTIONAL COMPONENTS ---
+// --- FUNCTIONAL COMPONENTS (WITH LARGE FILE FIX) ---
 
 const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
   const [file, setFile] = useState(null);
@@ -289,19 +284,34 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
     const CHUNK_SIZE = 16384; 
     let offset = 0;
     const reader = new FileReader();
+
     reader.onload = (e) => {
       if (!conn.open) return;
       conn.send({ type: 'CHUNK', data: e.target.result });
       offset += CHUNK_SIZE;
-      setProgress(Math.min(100, (offset / currentFile.size) * 100));
+      
+      const percent = Math.min(100, (offset / currentFile.size) * 100);
+      setProgress(percent);
+
       if (offset < currentFile.size) {
-        if (conn.dataChannel.bufferedAmount > 10 * 1024 * 1024) setTimeout(readNextChunk, 100);
-        else setTimeout(readNextChunk, 0); 
+        // --- BACKPRESSURE CONTROL ---
+        if (conn.dataChannel.bufferedAmount > 10 * 1024 * 1024) {
+           setTimeout(readNextChunk, 100);
+        } else {
+           setTimeout(readNextChunk, 0); 
+        }
       } else {
-        conn.send({ type: 'EOF' });
-        setStatus('complete');
+        // --- LARGE FILE FIX: WAIT FOR BUFFER EMPTY ---
+        const checkBufferInterval = setInterval(() => {
+            if (conn.dataChannel.bufferedAmount === 0) {
+              clearInterval(checkBufferInterval);
+              conn.send({ type: 'EOF' });
+              setStatus('complete');
+            }
+        }, 100);
       }
     };
+
     const readNextChunk = () => {
       const slice = currentFile.slice(offset, offset + CHUNK_SIZE);
       reader.readAsArrayBuffer(slice);
@@ -348,6 +358,9 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
              {status === 'transferring' && (
                <div className="w-full bg-slate-700 h-4 rounded-full overflow-hidden mt-4">
                  <div className="bg-cyan-500 h-full transition-all" style={{width: `${progress}%`}}></div>
+                 <p className="text-slate-400 text-sm mt-2">
+                   {progress === 100 ? "Finalizing..." : `${Math.floor(progress)}% Sent`}
+                 </p>
                </div>
              )}
              {status === 'complete' && (

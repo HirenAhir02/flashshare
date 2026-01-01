@@ -3,29 +3,29 @@ const { ExpressPeerServer } = require('peer');
 
 const app = express();
 
-// ✅ Railway dynamic port
+// Railway dynamic port
 const PORT = process.env.PORT || 3000;
 
-// basic test route
+// Test route
 app.get('/', (req, res) => {
   res.send('🚀 FlashShare Signaling Server Running');
 });
 
-// create HTTP server
+// Start HTTP server
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`✨ FlashShare Server running on port ${PORT}`);
 });
 
-// attach PeerJS to SAME server
+// Attach PeerJS to same server
 const peerServer = ExpressPeerServer(server, {
   path: '/flashshare',
-  secure: true,
   allow_discovery: true,
+  debug: true // 🔹 add debug to see connection logs
 });
 
 app.use('/flashshare', peerServer);
 
-// logs
+// Peer events
 peerServer.on('connection', (client) => {
   console.log('Client connected:', client.getId());
 });

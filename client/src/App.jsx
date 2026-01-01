@@ -257,11 +257,30 @@ useEffect(() => {
     };
 
     // Listen for ACK from receiver
-    connection.on('data', (data) => {
-      if (data?.type === 'ACK_CHUNK') {
-        sendNextChunk();
-      }
-    });
+   connection.on('data', (data) => {
+  if (data.type === 'METADATA') {
+    setMeta(data);
+    setStatus('receiving');
+    setReceivedChunks([]);
+  } else if (data.type === 'CHUNK') {
+    setReceivedChunks(prev => [...prev, data.data]);
+
+    // Send ACK back to sender
+    conn.send({ type: 'ACK_CHUNK' });
+
+    // Update progress
+    setProgress(prev => prev + (data.data.byteLength / meta.size) * 100);
+  } else if (data.type === 'EOF') {
+    // Build file
+    const blob = new Blob(receivedChunks, { type: meta.mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = meta.name;
+    a.click();
+    setStatus('complete');
+  }
+});
 
     // Start first chunk after connection is open
     connection.on('open', () => {

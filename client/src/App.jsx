@@ -181,12 +181,12 @@ peer.on('error', (err) => {
 
 
 
-    p.on('open', (id) => {
+    peer.on('open', (id) => {
       setPeerId(id);
       setStatus('ready');
     });
 
-    p.on('connection', (connection) => {
+    peer.on('connection', (connection) => {
       setConn(connection);
       setStatus('waiting_ack'); // Connected, waiting to start
       
@@ -203,15 +203,15 @@ peer.on('error', (err) => {
       });
     });
 
-    p.on('error', (err) => {
+    peer.on('error', (err) => {
       console.error(err);
       setStatus('error');
     });
 
-    setPeer(p);
+    setPeer(peer);
 
     return () => {
-      if (p) p.destroy();
+      if (peer) p.destroy();
     };
   }, [isPeerLoaded]);
 

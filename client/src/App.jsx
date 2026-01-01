@@ -24,31 +24,25 @@ const usePeerJS = () => {
   return loaded;
 };
 
-// --- MODAL COMPONENT (New) ---
+// --- MODAL COMPONENT ---
 const ConfirmModal = ({ isOpen, onConfirm, onCancel, darkMode }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm transition-all animate-in fade-in">
-      <div className={`w-full max-w-sm p-6 rounded-2xl shadow-2xl scale-100 animate-in zoom-in-95 duration-200 ${darkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white'}`}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className={`w-full max-w-sm p-6 rounded-2xl shadow-2xl scale-100 animate-in zoom-in-95 ${darkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white'}`}>
         <div className="flex flex-col items-center text-center gap-4">
           <div className="p-3 bg-red-500/10 rounded-full text-red-500">
             <AlertOctagon size={32} />
           </div>
-          <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Stop Transfer?</h3>
+          <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Abort Transfer?</h3>
           <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-            File transfer is currently in progress. If you leave now, the process will be cancelled.
+            If you leave now, the connection will be lost and the transfer will fail.
           </p>
           <div className="flex gap-3 w-full mt-2">
-            <button 
-              onClick={onCancel}
-              className={`flex-1 py-3 rounded-xl font-semibold ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
-            >
-              Continue
+            <button onClick={onCancel} className={`flex-1 py-3 rounded-xl font-semibold ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}>
+              Keep Transferring
             </button>
-            <button 
-              onClick={onConfirm}
-              className="flex-1 py-3 rounded-xl font-semibold bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20"
-            >
+            <button onClick={onConfirm} className="flex-1 py-3 rounded-xl font-semibold bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20">
               Yes, Stop
             </button>
           </div>
@@ -58,33 +52,15 @@ const ConfirmModal = ({ isOpen, onConfirm, onCancel, darkMode }) => {
   );
 };
 
-// --- NAVBAR ---
-const Navbar = ({ darkMode, toggleTheme, setPage, page }) => {
-  const handleNavClick = (sectionId) => {
-    if (page !== 'home') {
-      setPage('home');
-      setTimeout(() => {
-        const element = document.getElementById(sectionId);
-        if (element) element.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    } else {
-      const element = document.getElementById(sectionId);
-      if (element) element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  const handleLogoClick = () => {
-    setPage('home');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
+// --- NAVBAR (Modified to trigger Parent Navigation) ---
+const Navbar = ({ darkMode, toggleTheme, onNavigate, page }) => {
   return (
     <nav className={`fixed top-0 w-full z-50 backdrop-blur-md border-b transition-colors duration-300 ${
       darkMode ? 'bg-slate-900/90 border-slate-700 text-white' : 'bg-white/90 border-slate-200 text-slate-900'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-2 cursor-pointer group select-none" onClick={handleLogoClick}>
+          <div className="flex items-center gap-2 cursor-pointer group select-none" onClick={() => onNavigate('home')}>
             <div className="bg-gradient-to-tr from-cyan-400 to-blue-600 p-2 rounded-lg group-hover:rotate-12 transition-transform">
               <Zap size={24} className="text-white" fill="currentColor" />
             </div>
@@ -93,9 +69,10 @@ const Navbar = ({ darkMode, toggleTheme, setPage, page }) => {
             </span>
           </div>
           <div className="hidden md:flex items-center gap-6 text-sm font-medium">
-              <button onClick={() => handleNavClick('how-it-works')} className="hover:text-cyan-500 transition-colors">How it Works</button>
-              <button onClick={() => handleNavClick('security')} className="hover:text-cyan-500 transition-colors">Security</button>
-              <button onClick={() => handleNavClick('about')} className="hover:text-cyan-500 transition-colors">About</button>
+              {/* These connect to sections, safe to just scroll if on home */}
+              <button onClick={() => onNavigate('home', 'how-it-works')} className="hover:text-cyan-500 transition-colors">How it Works</button>
+              <button onClick={() => onNavigate('home', 'security')} className="hover:text-cyan-500 transition-colors">Security</button>
+              <button onClick={() => onNavigate('home', 'about')} className="hover:text-cyan-500 transition-colors">About</button>
           </div>
           <div className="flex items-center gap-4">
             <button onClick={toggleTheme} className={`p-2 rounded-full transition-colors ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-yellow-400' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}>
@@ -127,7 +104,7 @@ const Footer = ({ darkMode }) => (
 );
 
 // --- SECTIONS ---
-const Hero = ({ setPage, darkMode }) => (
+const Hero = ({ onStart, darkMode }) => (
   <div className="relative pt-24 pb-12 lg:pt-48 lg:pb-32 overflow-hidden px-4">
     <div className="absolute top-20 left-1/4 w-64 h-64 md:w-96 md:h-96 bg-cyan-500/20 rounded-full blur-3xl mix-blend-screen" />
     <div className="absolute bottom-10 right-1/4 w-64 h-64 md:w-96 md:h-96 bg-blue-600/20 rounded-full blur-3xl mix-blend-screen" />
@@ -142,10 +119,10 @@ const Hero = ({ setPage, darkMode }) => (
         Unlimited size. Direct P2P transfer. No servers.<br className="hidden sm:block"/> Securely share files directly between devices.
       </p>
       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full px-4 sm:px-0">
-        <button onClick={() => setPage('send')} className="group px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl text-white font-bold text-lg shadow-lg hover:shadow-cyan-500/25 active:scale-95 transition-all w-full sm:w-auto flex items-center justify-center gap-2">
+        <button onClick={() => onStart('send')} className="group px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl text-white font-bold text-lg shadow-lg hover:shadow-cyan-500/25 active:scale-95 transition-all w-full sm:w-auto flex items-center justify-center gap-2">
           <Upload size={24} className="group-hover:-translate-y-1 transition-transform" /><span>Send File</span>
         </button>
-        <button onClick={() => setPage('receive')} className={`px-8 py-4 rounded-xl font-bold text-lg border-2 transition-all w-full sm:w-auto flex items-center justify-center gap-2 ${darkMode ? 'border-slate-700 text-white hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
+        <button onClick={() => onStart('receive')} className={`px-8 py-4 rounded-xl font-bold text-lg border-2 transition-all w-full sm:w-auto flex items-center justify-center gap-2 ${darkMode ? 'border-slate-700 text-white hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
           <Download size={24} /><span>Receive File</span>
         </button>
       </div>
@@ -214,29 +191,22 @@ const AboutSection = ({ darkMode }) => (
     </section>
 );
 
-// --- SENDER INTERFACE (With Interrupt Modal) ---
-const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
+// --- SENDER INTERFACE ---
+const SendInterface = ({ onBack, darkMode, isPeerLoaded, setTransferActive }) => {
   const [file, setFile] = useState(null);
   const [peerId, setPeerId] = useState('');
   const [status, setStatus] = useState('init'); 
   const [progress, setProgress] = useState(0);
-  const [showModal, setShowModal] = useState(false);
   const peerRef = useRef(null);
   const fileRef = useRef(null);
   
   useEffect(() => { fileRef.current = file; }, [file]);
 
-  // Prevent browser close
+  // Notify parent about transfer status
   useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (status === 'transferring') {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [status]);
+    if (status === 'transferring') setTransferActive(true);
+    else setTransferActive(false);
+  }, [status, setTransferActive]);
 
   useEffect(() => {
     if (!isPeerLoaded) return;
@@ -269,9 +239,7 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
       setProgress(percent);
 
       if (offset < currentFile.size) {
-        // Stop if disconnected
         if (!peerRef.current || peerRef.current.destroyed) return;
-
         if (conn.dataChannel.bufferedAmount > 64 * 1024) {
            setTimeout(readNextChunk, 50); 
         } else {
@@ -314,30 +282,10 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
     alert("ID Copied!");
   };
 
-  const handleBack = () => {
-    if (status === 'transferring') {
-      setShowModal(true);
-    } else {
-      setPage('home');
-    }
-  };
-
-  const confirmCancel = () => {
-    if (peerRef.current) peerRef.current.destroy();
-    setPage('home');
-  };
-
   return (
-    <>
-      <ConfirmModal 
-        isOpen={showModal} 
-        onCancel={() => setShowModal(false)} 
-        onConfirm={confirmCancel} 
-        darkMode={darkMode} 
-      />
       <div className="min-h-screen pt-20 px-4 flex flex-col items-center max-w-4xl mx-auto w-full">
         <div className="w-full flex justify-between items-center mb-8">
-          <button onClick={handleBack} className={`flex items-center gap-2 hover:underline ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+          <button onClick={() => onBack('home')} className={`flex items-center gap-2 hover:underline ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
             <ArrowRight className="rotate-180" size={20} /> Back
           </button>
           <h2 className={`text-xl md:text-2xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Send Files</h2>
@@ -376,17 +324,15 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
           )}
         </div>
       </div>
-    </>
   );
 };
 
-// --- RECEIVER INTERFACE (With Interrupt Modal) ---
-const ReceiveInterface = ({ setPage, darkMode, isPeerLoaded }) => {
+// --- RECEIVER INTERFACE ---
+const ReceiveInterface = ({ onBack, darkMode, isPeerLoaded, setTransferActive }) => {
   const [remoteId, setRemoteId] = useState('');
   const [status, setStatus] = useState('init');
   const [progress, setProgress] = useState(0);
   const [fileName, setFileName] = useState('');
-  const [showModal, setShowModal] = useState(false);
   
   const chunksRef = useRef([]);
   const receivedSizeRef = useRef(0);
@@ -400,17 +346,11 @@ const ReceiveInterface = ({ setPage, darkMode, isPeerLoaded }) => {
     return () => peer.destroy();
   }, [isPeerLoaded]);
 
-  // Prevent browser close
+  // Notify parent about status
   useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (status === 'receiving') {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [status]);
+    if (status === 'receiving') setTransferActive(true);
+    else setTransferActive(false);
+  }, [status, setTransferActive]);
 
   const connectToPeer = () => {
     if (!remoteId) return;
@@ -446,30 +386,10 @@ const ReceiveInterface = ({ setPage, darkMode, isPeerLoaded }) => {
     document.body.removeChild(a);
   };
 
-  const handleBack = () => {
-    if (status === 'receiving') {
-      setShowModal(true);
-    } else {
-      setPage('home');
-    }
-  };
-
-  const confirmCancel = () => {
-    if (peerRef.current) peerRef.current.destroy();
-    setPage('home');
-  };
-
   return (
-    <>
-      <ConfirmModal 
-        isOpen={showModal} 
-        onCancel={() => setShowModal(false)} 
-        onConfirm={confirmCancel} 
-        darkMode={darkMode} 
-      />
       <div className="min-h-screen pt-20 px-4 flex flex-col items-center max-w-4xl mx-auto w-full">
         <div className="w-full flex justify-between items-center mb-8">
-          <button onClick={handleBack} className={`flex items-center gap-2 hover:underline ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+          <button onClick={() => onBack('home')} className={`flex items-center gap-2 hover:underline ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
             <ArrowRight className="rotate-180" size={20} /> Back
           </button>
           <h2 className={`text-xl md:text-2xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Receive Files</h2>
@@ -503,34 +423,146 @@ const ReceiveInterface = ({ setPage, darkMode, isPeerLoaded }) => {
           )}
         </div>
       </div>
-    </>
   );
 };
 
-// --- APP SHELL ---
+// --- MAIN APP COMPONENT ---
 const App = () => {
   const [page, setPage] = useState('home');
   const [darkMode, setDarkMode] = useState(true);
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [pendingPage, setPendingPage] = useState(null);
+  
   const isPeerLoaded = usePeerJS();
 
   useEffect(() => {
     document.body.style.backgroundColor = darkMode ? '#0f172a' : '#f8fafc';
   }, [darkMode]);
 
+  // --- GLOBAL NAVIGATION HANDLER ---
+  const handleNavigationAttempt = (destination, sectionId = null) => {
+    if (page === destination && !sectionId) return;
+
+    if (isTransferring) {
+      setShowModal(true);
+      setPendingPage({ dest: destination, sec: sectionId });
+      // Push state again so back button doesn't actually close app yet
+      window.history.pushState(null, '', window.location.pathname);
+    } else {
+      performNavigation(destination, sectionId);
+    }
+  };
+
+  const performNavigation = (destination, sectionId) => {
+    setPage(destination);
+    if (destination === 'home') {
+       if (sectionId) {
+         setTimeout(() => {
+           const el = document.getElementById(sectionId);
+           if (el) el.scrollIntoView({ behavior: 'smooth' });
+         }, 100);
+       } else {
+         window.scrollTo({ top: 0, behavior: 'smooth' });
+       }
+    }
+  };
+
+  const confirmStopTransfer = () => {
+    setIsTransferring(false); // This effectively allows unmount
+    setShowModal(false);
+    if (pendingPage) {
+      performNavigation(pendingPage.dest, pendingPage.sec);
+    } else {
+      performNavigation('home');
+    }
+  };
+
+  // --- HANDLE NATIVE BACK BUTTON (MOBILE) ---
+  useEffect(() => {
+    const handlePopState = (event) => {
+      if (isTransferring) {
+        // Prevent going back
+        event.preventDefault(); 
+        window.history.pushState(null, '', window.location.pathname); 
+        setShowModal(true);
+        setPendingPage({ dest: 'home', sec: null });
+      } else {
+        if (page !== 'home') {
+            setPage('home');
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    // Initial push to ensure we have a history entry to pop
+    if (page !== 'home') {
+        window.history.pushState(null, '', window.location.pathname);
+    }
+
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isTransferring, page]);
+
+
+  // --- BROWSER CLOSE/REFRESH GUARD ---
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isTransferring) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isTransferring]);
+
+
   return (
     <div className={`min-h-screen font-sans ${darkMode ? 'text-slate-100' : 'text-slate-900'}`}>
-      <Navbar darkMode={darkMode} toggleTheme={() => setDarkMode(!darkMode)} setPage={setPage} page={page} />
+      
+      <ConfirmModal 
+        isOpen={showModal} 
+        onCancel={() => setShowModal(false)} 
+        onConfirm={confirmStopTransfer} 
+        darkMode={darkMode} 
+      />
+
+      <Navbar 
+        darkMode={darkMode} 
+        toggleTheme={() => setDarkMode(!darkMode)} 
+        onNavigate={handleNavigationAttempt} 
+        page={page} 
+      />
+      
       {page === 'home' && (
         <>
-          <Hero setPage={setPage} darkMode={darkMode} />
+          <Hero onStart={(p) => handleNavigationAttempt(p)} darkMode={darkMode} />
           <HowItWorks darkMode={darkMode} />
           <SecuritySection darkMode={darkMode} />
           <AboutSection darkMode={darkMode} />
           <Footer darkMode={darkMode} />
         </>
       )}
-      {page === 'send' && <SendInterface setPage={setPage} darkMode={darkMode} isPeerLoaded={isPeerLoaded} />}
-      {page === 'receive' && <ReceiveInterface setPage={setPage} darkMode={darkMode} isPeerLoaded={isPeerLoaded} />}
+      
+      {/* Pass setTransferActive to children so they can update App state */}
+      {page === 'send' && (
+        <SendInterface 
+            onBack={(dest) => handleNavigationAttempt(dest)} 
+            darkMode={darkMode} 
+            isPeerLoaded={isPeerLoaded} 
+            setTransferActive={setIsTransferring}
+        />
+      )}
+      
+      {page === 'receive' && (
+        <ReceiveInterface 
+            onBack={(dest) => handleNavigationAttempt(dest)} 
+            darkMode={darkMode} 
+            isPeerLoaded={isPeerLoaded} 
+            setTransferActive={setIsTransferring}
+        />
+      )}
     </div>
   );
 };

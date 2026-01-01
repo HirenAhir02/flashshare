@@ -119,97 +119,97 @@ const SendInterface = ({ setPage, darkMode, isPeerLoaded }) => {
   const [conn, setConn] = useState(null);
   
   // Initialize Peer on mount
- // Initialize Peer on mount
-useEffect(() => {
-  if (!isPeerLoaded) return;
+  useEffect(() => {
+    if (!isPeerLoaded) return;
+    
+    // Create Peer (using public PeerJS server for demo)
+    // In production, use your own host: { host: 'your-node-app.com', port: 443, path: '/myapp' }
+    // const p = new window.Peer(null, {
+    //   debug: 2
+    // });
+//     const p = new window.Peer(null, {
+//   host: 'flashshare-production.up.railway.app',
+//   port: 9001,
+//   path: '/flashshare',
+//   secure: true
+// });
+// const p = new window.Peer(undefined, {
+//   host: 'flashshare-production.up.railway.app',
+//   path: '/flashshare',
+//   secure: true,
+//   config: {
+//     iceServers: [
+//       { urls: 'stun:stun.l.google.com:19302' },
+//       { urls: 'stun:stun1.l.google.com:19302' }
+//     ]
+//   }
+// });
 
-  // Create Peer for sender
-  const p = new window.Peer(undefined, {
-    host: 'flashshare-production.up.railway.app',
-    port: 443,
-    secure: true,
-    path: '/peerjs',
-    debug: 2
-  });
+// const p = new Peer(undefined, {
+//   host: 'flashshare-production.up.railway.app',
+//   port: 443,
+//   path: '/peerjs',   // ✅ MUST MATCH
+//   secure: true,
+//   debug: 2,
+//   config: {
+//     iceServers: [
+//       { urls: 'stun:stun.l.google.com:19302' },
+//       { urls: 'stun:stun1.l.google.com:19302' }
+//     ]
+//   }
+// });
 
-  // Handle Peer open
-  p.on('open', (id) => {
-    console.log('✅ Sender Peer ID:', id);
-    setPeerId(id);
-    setStatus('ready'); // Ready to share ID
-  });
+const p = new window.Peer(undefined, {
+  host: 'flashshare-production.up.railway.app',
+  port: 443,
+  secure: true,
+  path: '/peerjs',
+  debug: 2
+});
 
-  // Handle incoming connection from receiver
-  p.on('connection', (connection) => {
-    console.log('Receiver connected!');
-    setConn(connection);
-    setStatus('waiting_ack'); // Waiting for ACK / ready to start
+// p.on('open', (id) => {
+//   console.log('✅ Peer ID:', id);
+// });
 
-    let offset = 0;
-    const CHUNK_SIZE = 16 * 1024; // 16KB chunks
+p.on('error', (err) => {
+  console.error('❌ Peer error:', err);
+});
 
-    const sendNextChunk = () => {
-      if (!file || !connection.open) return;
 
-      const slice = file.slice(offset, offset + CHUNK_SIZE);
-      const reader = new FileReader();
 
-      reader.onload = (e) => {
-        connection.send({ type: 'CHUNK', data: e.target.result });
-        offset += CHUNK_SIZE;
+    p.on('open', (id) => {
+      setPeerId(id);
+      setStatus('ready');
+    });
 
-        const percent = Math.min(100, (offset / file.size) * 100);
-        setProgress(percent);
+    p.on('connection', (connection) => {
+      setConn(connection);
+      setStatus('waiting_ack'); // Connected, waiting to start
+      
+      connection.on('open', () => {
+        // Connection established
+        console.log("Receiver connected!");
+      });
 
-        if (offset < file.size) {
-          // Flow control: wait if buffer is high
-          if (connection.dataChannel.bufferedAmount > 10 * 1024 * 1024) {
-            setTimeout(sendNextChunk, 100);
-          } else {
-            setTimeout(sendNextChunk, 0);
-          }
-        } else {
-          connection.send({ type: 'EOF' });
-          setStatus('complete');
+      connection.on('data', (data) => {
+        // Handle ACK to send next chunk (Backpressure control)
+        if (data && data.type === 'ACK_CHUNK') {
+          // In a complex app, we use this to trigger next chunk read
         }
-      };
-
-      reader.readAsArrayBuffer(slice);
-    };
-
-    // Start sending first chunk when connection opens
-    connection.on('open', () => {
-      console.log('Connection open, starting file transfer...');
-      sendNextChunk();
+      });
     });
 
-    // Listen for ACK from receiver to control backpressure
-    connection.on('data', (data) => {
-      if (data?.type === 'ACK_CHUNK') {
-        sendNextChunk();
-      }
-    });
-
-    // Handle connection errors
-    connection.on('error', (err) => {
-      console.error('Connection error:', err);
+    p.on('error', (err) => {
+      console.error(err);
       setStatus('error');
     });
-  });
 
-  // Handle Peer errors
-  p.on('error', (err) => {
-    console.error('❌ Peer error:', err);
-    setStatus('error');
-  });
+    setPeer(p);
 
-  setPeer(p);
-
-  return () => {
-    if (p) p.destroy();
-  };
-}, [isPeerLoaded, file]);
-
+    return () => {
+      if (p) p.destroy();
+    };
+  }, [isPeerLoaded]);
 
   const handleFileDrop = (e) => {
     e.preventDefault();
@@ -255,71 +255,71 @@ useEffect(() => {
     document.body.removeChild(textArea);
   };
 
-  // const startTransfer = async () => {
-  //   if (!conn || !file) return;
-  //   setStatus('transferring');
+  const startTransfer = async () => {
+    if (!conn || !file) return;
+    setStatus('transferring');
 
-  //   // 1. Send Metadata
-  //   conn.send({
-  //     type: 'METADATA',
-  //     name: file.name,
-  //     size: file.size,
-  //     mime: file.type
-  //   });
+    // 1. Send Metadata
+    conn.send({
+      type: 'METADATA',
+      name: file.name,
+      size: file.size,
+      mime: file.type
+    });
 
-  //   // 2. Start Chunking
-  //   const CHUNK_SIZE = 16 * 1024; // 16KB chunks (Safe for PeerJS)
-  //   let offset = 0;
+    // 2. Start Chunking
+    const CHUNK_SIZE = 16 * 1024; // 16KB chunks (Safe for PeerJS)
+    let offset = 0;
 
-  //   // Simple loop for demo. For 150GB, we need flow control (wait for ACKs)
-  //   // to prevent memory overflow. Here we use a bufferedAmount check.
+    // Simple loop for demo. For 150GB, we need flow control (wait for ACKs)
+    // to prevent memory overflow. Here we use a bufferedAmount check.
     
-  //   const readSlice = (o) => {
-  //     const slice = file.slice(offset, o + CHUNK_SIZE);
-  //     const reader = new FileReader();
+    const readSlice = (o) => {
+      const slice = file.slice(offset, o + CHUNK_SIZE);
+      const reader = new FileReader();
       
-  //     reader.onload = (event) => {
-  //       if (!conn.open) return;
+      reader.onload = (event) => {
+        if (!conn.open) return;
         
-  //       conn.send({
-  //         type: 'CHUNK',
-  //         data: event.target.result // ArrayBuffer
-  //       });
+        conn.send({
+          type: 'CHUNK',
+          data: event.target.result // ArrayBuffer
+        });
 
-  //       offset += CHUNK_SIZE;
+        offset += CHUNK_SIZE;
         
-  //       // Calculate Progress
-  //       const percent = Math.min(100, (offset / file.size) * 100);
-  //       setProgress(percent);
+        // Calculate Progress
+        const percent = Math.min(100, (offset / file.size) * 100);
+        setProgress(percent);
 
-  //       if (offset < file.size) {
-  //         // Flow Control: Check buffer
-  //         if (conn.dataChannel.bufferedAmount > 10 * 1024 * 1024) {
-  //            // Wait if buffer is full (>10MB)
-  //            setTimeout(() => readSlice(offset), 100);
-  //         } else {
-  //            // Continue fast
-  //            setTimeout(() => readSlice(offset), 0); // Release main thread
-  //         }
-  //       } else {
-  //         conn.send({ type: 'EOF' }); // End of File
-  //         setStatus('complete');
-  //       }
-  //     };
+        if (offset < file.size) {
+          // Flow Control: Check buffer
+          if (conn.dataChannel.bufferedAmount > 10 * 1024 * 1024) {
+             // Wait if buffer is full (>10MB)
+             setTimeout(() => readSlice(offset), 100);
+          } else {
+             // Continue fast
+             setTimeout(() => readSlice(offset), 0); // Release main thread
+          }
+        } else {
+          conn.send({ type: 'EOF' }); // End of File
+          setStatus('complete');
+        }
+      };
       
-  //     reader.readAsArrayBuffer(slice);
-  //   };
+      reader.readAsArrayBuffer(slice);
+    };
 
-  //   readSlice(0);
-  // };
+    readSlice(0);
+  };
 
-  // // Auto-start transfer when connection opens and file is ready
-  // useEffect(() => {
-  //   if (status === 'waiting_ack' && file && conn) {
-  //      // Add small delay to ensure connection is stable
-  //      setTimeout(startTransfer, 500);
-  //   }
-  // }, [status, file, conn]);
+  // Auto-start transfer when connection opens and file is ready
+  useEffect(() => {
+    if (status === 'waiting_ack' && file && conn) {
+       // Add small delay to ensure connection is stable
+       setTimeout(startTransfer, 500);
+    }
+  }, [status, file, conn]);
 
 
   return (

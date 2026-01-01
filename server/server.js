@@ -1,12 +1,19 @@
 const express = require('express');
 const { ExpressPeerServer } = require('peer');
+const cors = require('cors');
 
 const app = express();
 
-// Railway dynamically assigns port
+// ✅ Allow requests from your frontend Vercel URL
+app.use(cors({
+  origin: 'https://flashshare-git-main-hirens-projects-74607a7c.vercel.app', 
+  methods: ['GET', 'POST']
+}));
+
+// Railway dynamic port
 const PORT = process.env.PORT || 3000;
 
-// Simple test route
+// Test route
 app.get('/', (req, res) => {
   res.send('🚀 FlashShare Signaling Server Running');
 });
@@ -16,21 +23,19 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`✨ FlashShare Server running on port ${PORT}`);
 });
 
-// Attach PeerJS to the same Express server
+// Attach PeerJS to same server
 const peerServer = ExpressPeerServer(server, {
   path: '/flashshare',
   allow_discovery: true,
-  debug: true // logs PeerJS activity
+  debug: true
 });
 
-// Mount PeerJS under /flashshare
 app.use('/flashshare', peerServer);
 
-// PeerJS connection events
+// PeerJS events
 peerServer.on('connection', (client) => {
   console.log('Client connected:', client.getId());
 });
-
 peerServer.on('disconnect', (client) => {
   console.log('Client disconnected:', client.getId());
 });

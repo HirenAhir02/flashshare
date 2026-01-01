@@ -11,10 +11,16 @@ const server = app.listen(port, () => {
   console.log(`✨ FlashShare Server running on port ${port}`);
 });
 
-const peerServer = PeerServer({
-  port: 9000,
-  path: '/flashshare',
-  allow_discovery: true
+// const peerServer = PeerServer({
+//   port: 9000,
+//   path: '/flashshare',
+//   allow_discovery: true
+// });
+// Peer server
+const peerServer = ExpressPeerServer(server, {
+  debug: true,
+  path: '/',              // 👈 VERY IMPORTANT
+  allow_discovery: true,
 });
 
 peerServer.on('connection', (client) => {
